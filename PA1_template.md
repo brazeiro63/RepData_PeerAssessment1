@@ -118,7 +118,7 @@ fdata2 <- fdata
 rows <- nrow(fdata2)
 for (i in 1:rows) {
         fdata2[i,]$steps <- ifelse(is.na(fdata2[i,]$steps), 
-                                   getMode(fdata2[i,]$interval),
+                                   getMedian(fdata2[i,]$interval),
                                    fdata2[i,]$steps)
 }
 ```
@@ -129,13 +129,8 @@ Do these values differ from the estimates from the first part of the assignment?
 
 ```r
 steps_by_day2 <- aggregate(steps ~ date, fdata2, sum)
-par(mfrow = c(1, 2), mar = c(3, 2, 2, 2))
 hist(steps_by_day2$steps, 
      main = "Steps distribution (no NA values)",
-     ylab = "frequency",
-     xlab = "steps")
-hist(steps_by_day$steps, 
-     main = "Steps distribution (original)",
      ylab = "frequency",
      xlab = "steps")
 ```
@@ -153,19 +148,33 @@ Values of mean and median - comparision with the original values
 --------- | ---------------------- | ----------------------  
 Mean      | 9503.869   |  10766.19  
 Median    | 10395   |  10765  
- 
+
+The values set to missing data pushed down either the mean and median of the sum of steps given by day.  
 
 ## Are there differences in activity patterns between weekdays and weekends?
 For this part the weekdays() function may be of some help here. Use the dataset with the filled-in missing values for this part.
 
 Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
 
-Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). The plot should look something like the following, which was created using simulated data:
-
 ```r
 ## Add a column with the corresponding type of day (weekday or weekend).
-fdata <- mutate(fdata, 
-                day = factor(is.weekend(date), 
-                             c(TRUE, FALSE), 
-                             c("weekend", "weekday")))
+fdata2 <- mutate(fdata2,
+                 day = factor(is.weekend(date), 
+                              c(TRUE, FALSE), 
+                              c("weekend", "weekday")))
 ```
+
+Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). The plot should look something like the following, which was created using simulated data:
+
+
+```r
+library(lattice)
+xyplot(steps~interval|day,
+       aggregate(steps~interval+day,fdata2,mean),
+       aspect = 1/2,
+       type="l",
+       layout=c(1,2),
+       ylab = "Mean number of steps")
+```
+
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12-1.png) 
