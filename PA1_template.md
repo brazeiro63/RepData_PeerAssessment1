@@ -10,15 +10,6 @@ To meet the requested this task, you must start loading the data, cleaning them 
 
 
 ```r
-install.packages("Cron")
-```
-
-```
-## Installing package into 'C:/Users/PauloRicardo/Documents/R/win-library/3.2'
-## (as 'lib' is unspecified)
-```
-
-```r
 library(chron)
 library(dplyr)
 ## Decompress the zip file to the same path
@@ -74,27 +65,102 @@ The result follows:
 ----
 
 ## What is the average daily activity pattern?
-
+* Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
 ```r
-maxi_steps_by_day <- aggregate(steps ~ date, fdata, max )
-with(maxi_steps_by_day, plot(date,steps,type = "l" ))
+mean_steps_by_interval <- aggregate(steps~interval, fdata, mean, na.rm=TRUE )
+with(mean_steps_by_interval, 
+        plot(interval,steps,type = "l" ))
 ```
 
 ![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5-1.png) 
 
+
+* Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
 ```r
-mean_steps_by_interval <- aggregate(steps ~ interval, fdata, mean )
-with(mean_steps_by_interval, plot(interval,steps,type = "l" ))
+max_mean <- mean_steps_by_interval[which.max(mean_steps_by_interval$steps),]$interval
+```
+That interval is the 835th interval.
+
+----
+## Imputing missing values
+Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+
+
+```r
+totalMissingValues <- sum(is.na(fdata$steps))
+```
+the total missing values is **2304**.
+
+Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+the strategy I used is to fill missing values with the median value for that interval across all days.
+
+```r
+## Calculate the median for al intervals
+stepsIntervalMode <- aggregate(steps~interval, fdata, median)
+
+## create a function to get the median given an interval
+getMedian<-function(intervalIn){
+        stepsIntervalMode[stepsIntervalMode$interval==intervalIn,]$steps
+}
 ```
 
-![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5-2.png) 
 
-## Imputing missing values
+Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+```r
+## Duplicate the data file
+fdata2 <- fdata
+
+## Fill all the NA values
+rows <- nrow(fdata2)
+for (i in 1:rows) {
+        fdata2[i,]$steps <- ifelse(is.na(fdata2[i,]$steps), 
+                                   getMode(fdata2[i,]$interval),
+                                   fdata2[i,]$steps)
+}
+```
+
+Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. 
+Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
 
+```r
+steps_by_day2 <- aggregate(steps ~ date, fdata2, sum)
+par(mfrow = c(1, 2), mar = c(3, 2, 2, 2))
+hist(steps_by_day2$steps, 
+     main = "Steps distribution (no NA values)",
+     ylab = "frequency",
+     xlab = "steps")
+hist(steps_by_day$steps, 
+     main = "Steps distribution (original)",
+     ylab = "frequency",
+     xlab = "steps")
+```
+
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10-1.png) 
+
+```r
+mean_steps2 <- mean(steps_by_day2$steps)
+medi_steps2 <- median(steps_by_day2$steps)
+```
+
+Values of mean and median - comparision with the original values  
+
+ Function | No NA Values             | Original values  
+--------- | ---------------------- | ----------------------  
+Mean      | 9503.869   |  10766.19  
+Median    | 10395   |  10765  
+ 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+For this part the weekdays() function may be of some help here. Use the dataset with the filled-in missing values for this part.
+
+Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+
+Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). The plot should look something like the following, which was created using simulated data:
 
 ```r
 ## Add a column with the corresponding type of day (weekday or weekend).
