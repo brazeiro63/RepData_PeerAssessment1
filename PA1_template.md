@@ -10,8 +10,22 @@ To meet the requested this task, you must start loading the data, cleaning them 
 
 
 ```r
+install.packages("Cron")
+```
+
+```
+## Installing package into 'C:/Users/PauloRicardo/Documents/R/win-library/3.2'
+## (as 'lib' is unspecified)
+```
+
+```r
+library(chron)
 library(dplyr)
+## Decompress the zip file to the same path
 unzip(zipfile = "activity.zip")
+
+## Read the csv file and store it in a data.frame while sort the variables
+## in a specific order
 fdata <- select(tbl_df(read.csv("activity.csv")),date, interval, steps)
 ```
 
@@ -62,9 +76,30 @@ The result follows:
 ## What is the average daily activity pattern?
 
 
+```r
+maxi_steps_by_day <- aggregate(steps ~ date, fdata, max )
+with(maxi_steps_by_day, plot(date,steps,type = "l" ))
+```
+
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5-1.png) 
+
+```r
+mean_steps_by_interval <- aggregate(steps ~ interval, fdata, mean )
+with(mean_steps_by_interval, plot(interval,steps,type = "l" ))
+```
+
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5-2.png) 
 
 ## Imputing missing values
 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```r
+## Add a column with the corresponding type of day (weekday or weekend).
+fdata <- mutate(fdata, 
+                day = factor(is.weekend(date), 
+                             c(TRUE, FALSE), 
+                             c("weekend", "weekday")))
+```
